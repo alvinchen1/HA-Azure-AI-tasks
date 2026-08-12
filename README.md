@@ -1,14 +1,14 @@
 # Azure AI Tasks - Home Assistant Integration
 
 [![HACS](https://img.shields.io/badge/HACS-Custom-41BDF5?style=flat-square)](https://github.com/hacs/integration)
-[![Release](https://img.shields.io/github/v/release/loryanstrant/HA-Azure-AI-tasks?style=flat-square)](https://github.com/loryanstrant/HA-Azure-AI-tasks/releases)
-[![Release date](https://img.shields.io/github/release-date/loryanstrant/HA-Azure-AI-tasks?style=flat-square)](https://github.com/loryanstrant/HA-Azure-AI-tasks/releases)
-[![Downloads](https://img.shields.io/github/downloads/loryanstrant/HA-Azure-AI-tasks/total?style=flat-square)](https://github.com/loryanstrant/HA-Azure-AI-tasks/releases)
-[![License](https://img.shields.io/github/license/loryanstrant/HA-Azure-AI-tasks?style=flat-square)](LICENSE)
-[![Last commit](https://img.shields.io/github/last-commit/loryanstrant/HA-Azure-AI-tasks?style=flat-square)](https://github.com/loryanstrant/HA-Azure-AI-tasks/commits)
-[![Stars](https://img.shields.io/github/stars/loryanstrant/HA-Azure-AI-tasks?style=flat-square)](https://github.com/loryanstrant/HA-Azure-AI-tasks/stargazers)
+[![Release](https://img.shields.io/github/v/release/alvinchen1/HA-Azure-AI-tasks?style=flat-square)](https://github.com/alvinchen1/HA-Azure-AI-tasks/releases)
+[![Release date](https://img.shields.io/github/release-date/alvinchen1/HA-Azure-AI-tasks?style=flat-square)](https://github.com/alvinchen1/HA-Azure-AI-tasks/releases)
+[![Downloads](https://img.shields.io/github/downloads/alvinchen1/HA-Azure-AI-tasks/total?style=flat-square)](https://github.com/alvinchen1/HA-Azure-AI-tasks/releases)
+[![License](https://img.shields.io/github/license/alvinchen1/HA-Azure-AI-tasks?style=flat-square)](LICENSE)
+[![Last commit](https://img.shields.io/github/last-commit/alvinchen1/HA-Azure-AI-tasks?style=flat-square)](https://github.com/alvinchen1/HA-Azure-AI-tasks/commits)
+[![Stars](https://img.shields.io/github/stars/alvinchen1/HA-Azure-AI-tasks?style=flat-square)](https://github.com/alvinchen1/HA-Azure-AI-tasks/stargazers)
 
-[![Open in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=loryanstrant&repository=HA-Azure-AI-tasks&category=integration)
+[![Open in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=alvinchen1&repository=HA-Azure-AI-tasks&category=integration)
 
 A Home Assistant custom integration that facilitates AI tasks using Azure AI services.
 
@@ -34,7 +34,7 @@ A Home Assistant custom integration that facilitates AI tasks using Azure AI ser
 1. Open HACS in your Home Assistant instance
 2. Go to "Integrations"
 3. Click the three dots menu and select "Custom repositories"
-4. Add `https://github.com/loryanstrant/HA-Azure-AI-Tasks` as repository
+4. Add `https://github.com/alvinchen1/HA-Azure-AI-Tasks` as repository
 5. Set category to "Integration"
 6. Click "Add"
 7. Find "Azure AI Tasks" in the integration list and install it
@@ -45,7 +45,7 @@ A Home Assistant custom integration that facilitates AI tasks using Azure AI ser
 
 Or replace steps 1-6 with this:
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=loryanstrant&repository=HA-Azure-AI-Tasks&category=integration)
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=alvinchen1&repository=HA-Azure-AI-Tasks&category=integration)
 
 ### Manual Installation
 
@@ -191,4 +191,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Support
 
-If you encounter any issues, please report them on the [GitHub Issues page](https://github.com/loryanstrant/HA-Azure-AI-tasks/issues).
+If you encounter any issues, please report them on the [GitHub Issues page](https://github.com/alvinchen1/HA-Azure-AI-tasks/issues).

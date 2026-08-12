@@ -30,4 +30,4 @@ Once configured, you can use the AI Task entity in automations and scripts to:
 - Create images using DALL-E with customizable prompts and sizes
 - Process various AI tasks using your Azure AI service
 
-For detailed documentation, please visit the [GitHub repository](https://github.com/loryanstrant/ha-azure-ai-task).
+For detailed documentation, please visit the [GitHub repository](https://github.com/alvinchen1/ha-azure-ai-task).
