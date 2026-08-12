@@ -34,7 +34,7 @@ API_VERSION_IMAGE_LATEST = "2025-04-01-preview"
 API_VERSION_IMAGE_LEGACY = "2024-10-21"
 
 # Model Constants
-VISION_MODELS = ["gpt-image-1", "flux.1-kontext-pro", "gpt-4v", "gpt-4o"]
+VISION_MODELS = ["gpt-image-1", "gpt-image-1.5", "flux.1-kontext-pro", "gpt-4v", "gpt-4o"]
 FLUX_MODEL = "flux.1-kontext-pro"
 
 # Image Generation Constants
@@ -718,6 +718,14 @@ class AzureAITaskEntity(ai_task.AITaskEntity):
         # Configure parameters based on the specific model
         api_version = API_VERSION_IMAGE_LEGACY
         if image_model == "gpt-image-1":
+            payload.update({
+                "size": DEFAULT_IMAGE_SIZE,
+                "quality": "high",
+                "output_format": "png",
+                "output_compression": 100,
+            })
+            api_version = API_VERSION_IMAGE_LATEST
+        elif image_model == "gpt-image-1.5":
             payload.update({
                 "size": DEFAULT_IMAGE_SIZE,
                 "quality": "high",
