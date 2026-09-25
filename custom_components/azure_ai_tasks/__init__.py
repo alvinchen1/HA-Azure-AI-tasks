@@ -20,6 +20,7 @@ from .const import (
     DOMAIN,
     ISSUE_MIGRATION_DOWNGRADE,
     ISSUE_MIGRATION_INCOMPLETE,
+    ISSUE_MIGRATION_INCOMPLETE_RESTART,
 )
 
 PLATFORMS: list[Platform] = [Platform.AI_TASK]
@@ -31,23 +32,30 @@ MIN_HA_VERSION = "2025.10.0"
 
 
 def _check_ha_version() -> None:
-    """Check if Home Assistant version meets minimum requirements."""
+    """Refuse to set up on a Home Assistant older than we support.
+
+    Running on an older core is not something retrying fixes, so this raises
+    ConfigEntryError rather than ConfigEntryNotReady. If the version string
+    cannot be parsed at all we log and carry on - an unparseable version is not
+    evidence that the core is too old.
+    """
     from packaging import version
-    
+
     try:
         current_version = version.parse(ha_version.split(".dev")[0])  # Remove .dev suffix if present
         min_version = version.parse(MIN_HA_VERSION)
-        
-        if current_version < min_version:
-            raise ConfigEntryNotReady(
-                f"Home Assistant {MIN_HA_VERSION} or newer is required. "
-                f"Current version: {ha_version}"
-            )
-    except Exception as err:
+    except Exception as err:  # pylint: disable=broad-except
         _LOGGER.warning(
             "Unable to verify Home Assistant version compatibility: %s. "
             "Integration may not work correctly if running on older versions.",
             err
+        )
+        return
+
+    if current_version < min_version:
+        raise ConfigEntryError(
+            f"Home Assistant {MIN_HA_VERSION} or newer is required. "
+            f"Current version: {ha_version}"
         )
 
 
@@ -58,8 +66,24 @@ def _issue_id(issue: str, config_entry: ConfigEntry) -> str:
 
 def _clear_migration_issues(hass: HomeAssistant, config_entry: ConfigEntry) -> None:
     """Drop any repair issue a previous migration attempt raised for this entry."""
-    for issue in (ISSUE_MIGRATION_DOWNGRADE, ISSUE_MIGRATION_INCOMPLETE):
+    for issue in (
+        ISSUE_MIGRATION_DOWNGRADE,
+        ISSUE_MIGRATION_INCOMPLETE,
+        ISSUE_MIGRATION_INCOMPLETE_RESTART,
+    ):
         async_delete_issue(hass, DOMAIN, _issue_id(issue, config_entry))
+
+
+def _can_retry_migration(hass: HomeAssistant) -> bool:
+    """Whether this Home Assistant can retry a migration without a restart.
+
+    config_entries.async_retry_migration is newer than the minimum Home
+    Assistant this integration supports. Without it there is no way to offer a
+    Fix button honestly: an entry in the migration_error state is
+    non-recoverable, so async_unload - and therefore async_reload - refuses it,
+    and only a restart re-runs the migration.
+    """
+    return hasattr(hass.config_entries, "async_retry_migration")
 
 
 def _migrate_v1_to_v2(config_entry: ConfigEntry) -> tuple[dict, dict]:
@@ -168,16 +192,24 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) ->
             "Azure AI Tasks config entry %s has no endpoint or API key after migration",
             config_entry.entry_id,
         )
+        # Offer a Fix button only where retrying the migration actually works;
+        # otherwise raise the variant that tells the user to restart.
+        fixable = _can_retry_migration(hass)
+        issue = (
+            ISSUE_MIGRATION_INCOMPLETE
+            if fixable
+            else ISSUE_MIGRATION_INCOMPLETE_RESTART
+        )
         async_create_issue(
             hass,
             DOMAIN,
-            _issue_id(ISSUE_MIGRATION_INCOMPLETE, config_entry),
-            is_fixable=True,
+            _issue_id(issue, config_entry),
+            is_fixable=fixable,
             is_persistent=False,
             severity=IssueSeverity.ERROR,
-            translation_key=ISSUE_MIGRATION_INCOMPLETE,
+            translation_key=issue,
             translation_placeholders={"title": config_entry.title},
-            data={"entry_id": config_entry.entry_id},
+            data={"entry_id": config_entry.entry_id} if fixable else None,
         )
         raise ConfigEntryError(
             translation_domain=DOMAIN,

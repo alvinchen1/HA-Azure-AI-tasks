@@ -17,6 +17,13 @@ All notable changes to Azure AI Tasks are recorded here. Versions follow
     to retry the update, without restarting Home Assistant.
 - Downgrading Azure AI Tasks to an older version than the one that wrote your
   configuration now says so clearly instead of failing obscurely.
+- Running on a Home Assistant older than 2025.10.0 now stops setup with a clear
+  message. It previously only logged a warning and carried on, which meant the
+  integration failed later for no visible reason.
+
+On Home Assistant versions that cannot retry a migration in place, the Repair
+tells you to reconfigure and restart instead of offering a Fix button that
+would not work.
 
 Existing working setups are unaffected: a healthy entry migrates exactly as it
 did before.

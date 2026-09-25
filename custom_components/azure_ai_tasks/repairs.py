@@ -17,6 +17,7 @@ import voluptuous as vol
 from homeassistant.components.repairs import ConfirmRepairFlow, RepairsFlow
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
+from homeassistant.exceptions import HomeAssistantError
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -24,20 +25,25 @@ _LOGGER = logging.getLogger(__name__)
 async def _async_retry_migration(hass: HomeAssistant, entry_id: str) -> None:
     """Retry the migration of one config entry.
 
-    `async_retry_migration` is the supported call, but it is newer than the
-    minimum Home Assistant this integration supports, so fall back to reloading
-    the entry - which also re-runs the migration - on older cores.
-    """
-    if retry := getattr(hass.config_entries, "async_retry_migration", None):
-        await retry(entry_id)
-        return
+    `async_retry_migration` is the only way to do this: an entry parked in the
+    migration_error state is non-recoverable, so `async_unload` - and therefore
+    `async_reload` - raises OperationNotAllowed on it, and a restart is the only
+    other thing that re-runs the migration.
 
-    _LOGGER.debug(
-        "async_retry_migration is unavailable on this Home Assistant; "
-        "reloading entry %s to re-run the migration instead",
-        entry_id,
-    )
-    await hass.config_entries.async_reload(entry_id)
+    That call is newer than the minimum Home Assistant this integration
+    supports, so on an older core we never raise a fixable issue in the first
+    place (see `_can_retry_migration` in __init__.py) and this flow is not
+    reachable. If it somehow is, fail loudly rather than reporting a fix that
+    did not happen.
+    """
+    retry = getattr(hass.config_entries, "async_retry_migration", None)
+    if retry is None:
+        raise HomeAssistantError(
+            "This version of Home Assistant cannot retry a config entry "
+            "migration; restart Home Assistant instead."
+        )
+
+    await retry(entry_id)
 
 
 class MigrationRepairFlow(RepairsFlow):

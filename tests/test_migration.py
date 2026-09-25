@@ -9,7 +9,11 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryError, ConfigEntryNotReady
+from homeassistant.exceptions import (
+    ConfigEntryError,
+    ConfigEntryNotReady,
+    HomeAssistantError,
+)
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.azure_ai_tasks import async_migrate_entry
@@ -20,6 +24,7 @@ from custom_components.azure_ai_tasks.const import (
     DOMAIN,
     ISSUE_MIGRATION_DOWNGRADE,
     ISSUE_MIGRATION_INCOMPLETE,
+    ISSUE_MIGRATION_INCOMPLETE_RESTART,
 )
 from custom_components.azure_ai_tasks.repairs import (
     MigrationRepairFlow,
@@ -109,8 +114,12 @@ async def test_unusable_entry_raises_a_fixable_issue(
     """No endpoint or no API key is persistent - raise a repair, not a retry."""
     entry = _entry(hass, 1, data)
 
-    with pytest.raises(ConfigEntryError):
-        await async_migrate_entry(hass, entry)
+    # A core new enough to retry a migration, so the repair gets a Fix button.
+    with patch(
+        "custom_components.azure_ai_tasks._can_retry_migration", return_value=True
+    ):
+        with pytest.raises(ConfigEntryError):
+            await async_migrate_entry(hass, entry)
 
     assert f"{ISSUE_MIGRATION_INCOMPLETE}_{entry.entry_id}" in _issue_ids(hass)
 
@@ -164,22 +173,61 @@ async def test_fix_flow_retries_the_migration(hass: HomeAssistant) -> None:
     retry.assert_awaited_once_with("abc")
 
 
-async def test_fix_flow_falls_back_to_reload_on_older_cores(
+async def test_older_cores_get_the_restart_issue_instead_of_a_fix_button(
     hass: HomeAssistant,
 ) -> None:
-    """async_retry_migration is newer than our minimum HA; degrade gracefully."""
+    """Without async_retry_migration there is no honest Fix, so say "restart".
+
+    An entry in the migration_error state is non-recoverable, so async_reload
+    raises OperationNotAllowed on it - offering a Fix button that silently did
+    nothing would be worse than not offering one.
+    """
+    entry = _entry(hass, 1, {**GOOD_CONFIG, CONF_API_KEY: ""})
+
+    with patch.object(
+        hass.config_entries, "async_retry_migration", None, create=True
+    ):
+        # Simulate a core that does not have the call at all.
+        with patch(
+            "custom_components.azure_ai_tasks._can_retry_migration", return_value=False
+        ):
+            with pytest.raises(ConfigEntryError):
+                await async_migrate_entry(hass, entry)
+
+    assert f"{ISSUE_MIGRATION_INCOMPLETE_RESTART}_{entry.entry_id}" in _issue_ids(hass)
+    assert f"{ISSUE_MIGRATION_INCOMPLETE}_{entry.entry_id}" not in _issue_ids(hass)
+
+
+async def test_restart_issue_is_cleared_by_a_later_successful_migration(
+    hass: HomeAssistant,
+) -> None:
+    """The restart-variant issue clears too, once the entry is usable."""
+    entry = _entry(hass, 1, {**GOOD_CONFIG, CONF_API_KEY: ""})
+
+    with patch(
+        "custom_components.azure_ai_tasks._can_retry_migration", return_value=False
+    ):
+        with pytest.raises(ConfigEntryError):
+            await async_migrate_entry(hass, entry)
+    assert _issue_ids(hass)
+
+    hass.config_entries.async_update_entry(entry, data=GOOD_CONFIG)
+    assert await async_migrate_entry(hass, entry) is True
+    assert not _issue_ids(hass)
+
+
+async def test_repair_flow_refuses_rather_than_faking_success(
+    hass: HomeAssistant,
+) -> None:
+    """If the flow is somehow reached without the API, it must not report a fix."""
     flow = MigrationRepairFlow("abc")
     flow.hass = hass
 
-    reload_entry = AsyncMock()
-    with patch.object(hass.config_entries, "async_reload", reload_entry):
-        # Force the fallback even on a core that does have the newer call.
-        with patch.object(
-            hass.config_entries, "async_retry_migration", None, create=True
-        ):
+    with patch.object(
+        hass.config_entries, "async_retry_migration", None, create=True
+    ):
+        with pytest.raises(HomeAssistantError):
             await flow.async_step_confirm({})
-
-    reload_entry.assert_awaited_once_with("abc")
 
 
 async def test_fix_flow_without_entry_id_is_a_confirm(hass: HomeAssistant) -> None:

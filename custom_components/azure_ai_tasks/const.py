@@ -11,6 +11,11 @@ CONFIG_ENTRY_VERSION = 2
 # their own issue).
 ISSUE_MIGRATION_DOWNGRADE = "migrate_downgrade"
 ISSUE_MIGRATION_INCOMPLETE = "migrate_incomplete_config"
+# Same problem as ISSUE_MIGRATION_INCOMPLETE, but raised on Home Assistant
+# versions without config_entries.async_retry_migration, where we cannot offer
+# a Fix button - an entry in the migration_error state is non-recoverable, so
+# async_reload refuses to touch it and only a restart re-runs the migration.
+ISSUE_MIGRATION_INCOMPLETE_RESTART = "migrate_incomplete_config_restart"
 
 # Configuration keys
 CONF_ENDPOINT = "endpoint"

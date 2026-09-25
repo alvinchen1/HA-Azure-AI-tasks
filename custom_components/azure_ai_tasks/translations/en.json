@@ -64,6 +64,10 @@
           }
         }
       }
+    },
+    "migrate_incomplete_config_restart": {
+      "title": "Azure AI Tasks needs its endpoint and API key again",
+      "description": "\"{title}\" has no endpoint or API key saved, so Azure AI Tasks could not finish updating it. Reconfigure it (Settings > Devices & Services > Azure AI Tasks > Configure), then restart Home Assistant to finish the update."
     }
   },
   "exceptions": {
