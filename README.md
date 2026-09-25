@@ -57,7 +57,11 @@ Or replace steps 1-6 with this:
 
 1. Go to Settings → Devices & Services → Add Integration
 2. Search for "Azure AI Tasks"
-3. Enter your Azure AI endpoint URL (make sure you use the Azure OpenAI URL - i.e. https://USE-YOUR-RESOURCE-URL.openai.azure.com)
+3. Enter your Azure AI endpoint URL. Both Azure surfaces are supported and the right one is detected automatically:
+   - **Azure OpenAI (classic)** - `https://YOUR-RESOURCE.openai.azure.com`
+   - **Azure AI Foundry (v1)** - `https://YOUR-RESOURCE.services.ai.azure.com`
+
+   Just the resource URL is enough; if you paste the full `.../openai/v1` base that works too.
 4. Enter your API key
 5. **Enter your preferred chat model** (gpt-35-turbo, gpt-4, gpt-4o, etc.) - leave empty for image-only entities
 6. **Enter your preferred image model** (dall-e-2, dall-e-3, etc.) - leave empty for chat-only entities  
@@ -175,7 +179,7 @@ data:
 ## Requirements
 
 - **Home Assistant 2025.10.0 or later** (required for AI Task and AI Image services)
-- Azure AI service with API access
+- Azure AI service with API access - either an **Azure OpenAI** resource (`*.openai.azure.com`) or an **Azure AI Foundry** resource (`*.services.ai.azure.com`)
 - Valid Azure AI endpoint and API key
 
 ## Contributing

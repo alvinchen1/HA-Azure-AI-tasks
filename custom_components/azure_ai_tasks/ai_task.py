@@ -9,6 +9,7 @@ import re
 from json import JSONDecodeError
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit, urlunsplit
 
 import aiofiles
 import aiohttp
@@ -22,7 +23,15 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util.json import json_loads
 
-from .const import CONF_API_KEY, CONF_ENDPOINT, CONF_CHAT_MODEL, CONF_IMAGE_MODEL, DOMAIN
+from .const import (
+    CONF_API_KEY,
+    CONF_ENDPOINT,
+    CONF_CHAT_MODEL,
+    CONF_IMAGE_MODEL,
+    DOMAIN,
+    V1_HOST_MARKER,
+    V1_PATH_MARKER,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -53,6 +62,32 @@ MEDIA_SOURCE_CAMERA = "media-source://camera/"
 MEDIA_SOURCE_LOCAL = "media-source://media_source/local/"
 MEDIA_SOURCE_IMAGE = "media-source://image/"
 MEDIA_LOCAL_PATH = "/media/local/"
+
+
+def _is_v1_endpoint(endpoint: str) -> bool:
+    """Whether this endpoint is the Azure AI Foundry "v1" OpenAI surface.
+
+    Detected either from the host (an Azure AI Foundry resource lives on
+    {resource}.services.ai.azure.com) or from a base URL the user pasted that
+    already points at /openai/v1/... Classic Azure OpenAI resources
+    ({resource}.openai.azure.com) match neither and keep the deployment-in-path
+    plus api-version behaviour they have always had.
+    """
+    parts = urlsplit(endpoint or "")
+    return V1_HOST_MARKER in parts.netloc or V1_PATH_MARKER in parts.path
+
+
+def _endpoint_root(endpoint: str) -> str:
+    """Strip any path from the endpoint, leaving scheme://host.
+
+    A user may paste the full v1 base (".../openai/v1" or even
+    ".../openai/v1/responses"); normalising to the host root first stops us
+    appending a second path and producing a 404 "Resource not found".
+    """
+    parts = urlsplit(endpoint or "")
+    if parts.netloc:
+        return urlunsplit((parts.scheme, parts.netloc, "", "", ""))
+    return (endpoint or "").rstrip("/")
 
 
 def _uses_max_completion_tokens(model: str) -> bool:
@@ -121,6 +156,15 @@ class AzureAITaskEntity(ai_task.AITaskEntity):
         """Initialize the Azure AI Task entity."""
         self._name = name
         self._endpoint = endpoint.rstrip("/")
+        # Which Azure OpenAI surface this endpoint speaks. Decided once here so
+        # every call site builds a consistent URL.
+        self._is_v1 = _is_v1_endpoint(self._endpoint)
+        self._endpoint_root = _endpoint_root(self._endpoint)
+        if self._is_v1:
+            _LOGGER.debug(
+                "Azure AI Tasks: endpoint %s detected as the v1 (Foundry) surface",
+                self._endpoint_root,
+            )
         self._api_key = api_key
         self._chat_model = chat_model
         self._image_model = image_model
@@ -201,6 +245,35 @@ class AzureAITaskEntity(ai_task.AITaskEntity):
     def supports_media_attachments(self) -> bool:
         """Return whether the entity supports media attachments."""
         return self.supports_attachments
+
+    def _build_request(
+        self,
+        model: str,
+        path: str,
+        api_version: str,
+        payload: dict[str, Any],
+    ) -> tuple[str, dict[str, str] | None, dict[str, Any]]:
+        """Build (url, query params, payload) for one Azure OpenAI call.
+
+        `path` is the operation, e.g. "chat/completions" or
+        "images/generations".
+
+        * v1 (Foundry): {root}/openai/v1/{path}, no api-version query, and the
+          model must be carried in the request body.
+        * classic: {endpoint}/openai/deployments/{model}/{path} with the
+          api-version query - exactly as before.
+        """
+        if self._is_v1:
+            return (
+                f"{self._endpoint_root}/openai/v1/{path}",
+                None,
+                {**payload, "model": model},
+            )
+        return (
+            f"{self._endpoint}/openai/deployments/{model}/{path}",
+            {"api-version": api_version},
+            payload,
+        )
 
     def _get_headers(self, use_bearer_auth: bool = False) -> dict[str, str]:
         """Get standard headers for API requests."""
@@ -525,7 +598,6 @@ class AzureAITaskEntity(ai_task.AITaskEntity):
             _LOGGER.error("Failed to process image attachment for editing. Attachments: %r", attachments)
             raise HomeAssistantError("Failed to process image attachment for editing.")
 
-        url = f"{self._endpoint}/openai/deployments/{image_model}/images/edits"
         headers = self._get_headers()
         payload = {
             "model": image_model,
@@ -534,12 +606,15 @@ class AzureAITaskEntity(ai_task.AITaskEntity):
             "response_format": "b64_json",
             "size": DEFAULT_IMAGE_SIZE
         }
-        
+        url, params, payload = self._build_request(
+            image_model, "images/edits", API_VERSION_IMAGE_LATEST, payload
+        )
+
         async with session.post(
             url,
             headers=headers,
             json=payload,
-            params={"api-version": API_VERSION_IMAGE_LATEST}
+            params=params
         ) as response:
             if response.status != 200:
                 error_text = await response.text()
@@ -567,13 +642,15 @@ class AzureAITaskEntity(ai_task.AITaskEntity):
             "size": DEFAULT_IMAGE_SIZE,
             "response_format": "b64_json"
         }
-        url = f"{self._endpoint}/openai/deployments/{image_model}/images/generations"
-        
+        url, params, payload = self._build_request(
+            image_model, "images/generations", API_VERSION_IMAGE_LATEST, payload
+        )
+
         async with session.post(
             url,
             headers=headers,
             json=payload,
-            params={"api-version": API_VERSION_IMAGE_LATEST}
+            params=params
         ) as response:
             if response.status != 200:
                 error_text = await response.text()
@@ -682,14 +759,16 @@ class AzureAITaskEntity(ai_task.AITaskEntity):
         }
         if not is_reasoning:
             payload["temperature"] = DEFAULT_TEMPERATURE
-        url = f"{self._endpoint}/openai/deployments/{image_model}/chat/completions"
+        url, params, payload = self._build_request(
+            image_model, "chat/completions", API_VERSION_IMAGE_LATEST, payload
+        )
         headers = self._get_headers()
-        
+
         async with session.post(
             url,
             headers=headers,
             json=payload,
-            params={"api-version": API_VERSION_IMAGE_LATEST}
+            params=params
         ) as response:
             if response.status != 200:
                 error_text = await response.text()
@@ -743,14 +822,16 @@ class AzureAITaskEntity(ai_task.AITaskEntity):
                 "quality": "standard",
             })
 
-        url = f"{self._endpoint}/openai/deployments/{image_model}/images/generations"
+        url, params, payload = self._build_request(
+            image_model, "images/generations", api_version, payload
+        )
         headers = self._get_headers()
-        
+
         async with session.post(
             url,
             headers=headers,
             json=payload,
-            params={"api-version": api_version}
+            params=params
         ) as response:
             if response.status != 200:
                 error_text = await response.text()
@@ -841,13 +922,16 @@ class AzureAITaskEntity(ai_task.AITaskEntity):
         payload = await self._build_chat_payload(user_message, attachments, session, self.chat_model)
         model_to_use = self.chat_model
         headers = self._get_headers(use_bearer_auth=True)
+        url, params, payload = self._build_request(
+            model_to_use, "chat/completions", API_VERSION_CHAT, payload
+        )
 
         try:
             async with session.post(
-                f"{self._endpoint}/openai/deployments/{model_to_use}/chat/completions",
+                url,
                 headers=headers,
                 json=payload,
-                params={"api-version": API_VERSION_CHAT}
+                params=params
             ) as response:
                 if response.status != 200:
                     error_text = await response.text()
