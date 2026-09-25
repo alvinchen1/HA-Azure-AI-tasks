@@ -2,6 +2,21 @@
 
 DOMAIN = "azure_ai_tasks"
 
+# The config entry schema version this release understands. Bump it alongside
+# ConfigFlow.VERSION whenever the stored entry shape changes, and give
+# async_migrate_entry a branch for the previous version.
+CONFIG_ENTRY_VERSION = 2
+
+# Repair issue IDs (suffixed with the entry ID, so two entries can each raise
+# their own issue).
+ISSUE_MIGRATION_DOWNGRADE = "migrate_downgrade"
+ISSUE_MIGRATION_INCOMPLETE = "migrate_incomplete_config"
+# Same problem as ISSUE_MIGRATION_INCOMPLETE, but raised on Home Assistant
+# versions without config_entries.async_retry_migration, where we cannot offer
+# a Fix button - an entry in the migration_error state is non-recoverable, so
+# async_reload refuses to touch it and only a restart re-runs the migration.
+ISSUE_MIGRATION_INCOMPLETE_RESTART = "migrate_incomplete_config_restart"
+
 # Configuration keys
 CONF_ENDPOINT = "endpoint"
 CONF_API_KEY = "api_key"

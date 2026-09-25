@@ -48,5 +48,37 @@
     "error": {
       "no_models_configured": "At least one model (chat or image) must be configured"
     }
+  },
+  "issues": {
+    "migrate_downgrade": {
+      "title": "Azure AI Tasks cannot read its saved configuration",
+      "description": "The saved configuration for \"{title}\" was written by a newer version of Azure AI Tasks (version {entry_version}); this version understands up to version {supported_version}. This usually means Azure AI Tasks was downgraded. Update it back to the newer version, or remove and re-add the integration."
+    },
+    "migrate_incomplete_config": {
+      "title": "Azure AI Tasks needs its endpoint and API key again",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Retry the Azure AI Tasks update",
+            "description": "\"{title}\" has no endpoint or API key saved, so it could not finish updating. Reconfigure it first (Settings > Devices & Services > Azure AI Tasks > Configure), then submit this to try again."
+          }
+        }
+      }
+    },
+    "migrate_incomplete_config_restart": {
+      "title": "Azure AI Tasks needs its endpoint and API key again",
+      "description": "\"{title}\" has no endpoint or API key saved, so Azure AI Tasks could not finish updating it. Reconfigure it (Settings > Devices & Services > Azure AI Tasks > Configure), then restart Home Assistant to finish the update."
+    }
+  },
+  "exceptions": {
+    "migrate_downgrade": {
+      "message": "The saved configuration for \"{title}\" is version {entry_version}, but this version of Azure AI Tasks only understands up to version {supported_version}."
+    },
+    "migrate_incomplete_config": {
+      "message": "\"{title}\" has no endpoint or API key saved, so it could not finish updating."
+    },
+    "migrate_transient": {
+      "message": "Could not save the updated Azure AI Tasks configuration; this will be retried."
+    }
   }
 }
