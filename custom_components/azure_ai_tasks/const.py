@@ -2,6 +2,16 @@
 
 DOMAIN = "azure_ai_tasks"
 
+# The config entry schema version this release understands. Bump it alongside
+# ConfigFlow.VERSION whenever the stored entry shape changes, and give
+# async_migrate_entry a branch for the previous version.
+CONFIG_ENTRY_VERSION = 2
+
+# Repair issue IDs (suffixed with the entry ID, so two entries can each raise
+# their own issue).
+ISSUE_MIGRATION_DOWNGRADE = "migrate_downgrade"
+ISSUE_MIGRATION_INCOMPLETE = "migrate_incomplete_config"
+
 # Configuration keys
 CONF_ENDPOINT = "endpoint"
 CONF_API_KEY = "api_key"

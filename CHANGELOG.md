@@ -3,6 +3,24 @@
 All notable changes to Azure AI Tasks are recorded here. Versions follow
 [semantic versioning](https://semver.org/).
 
+## 2.4.0
+
+### Changed
+
+- **A failed update of your saved configuration now tells you what to do about
+  it.** Previously the update step always reported success, so a genuinely
+  broken entry looked fine and simply failed later. Now:
+  - a temporary problem (for example a storage error) is retried by Home
+    Assistant on its own - nothing for you to do;
+  - a real problem raises a **Repair** in Settings → System → Repairs. Fix the
+    entry (usually by reconfiguring the endpoint and API key) and click **Fix**
+    to retry the update, without restarting Home Assistant.
+- Downgrading Azure AI Tasks to an older version than the one that wrote your
+  configuration now says so clearly instead of failing obscurely.
+
+Existing working setups are unaffected: a healthy entry migrates exactly as it
+did before.
+
 ## 2.3.0
 
 ### Added
