@@ -74,7 +74,14 @@ def _is_v1_endpoint(endpoint: str) -> bool:
     plus api-version behaviour they have always had.
     """
     parts = urlsplit(endpoint or "")
-    return V1_HOST_MARKER in parts.netloc or V1_PATH_MARKER in parts.path
+    # An endpoint pasted without a scheme lands entirely in .path, so check the
+    # host marker against both rather than only .netloc.
+    if V1_HOST_MARKER in parts.netloc or V1_HOST_MARKER in parts.path:
+        return True
+    # Match /openai/v1 as a whole path segment, so a path such as
+    # ".../openai/v10" is not mistaken for it.
+    path = parts.path.rstrip("/")
+    return path == V1_PATH_MARKER or path.startswith(f"{V1_PATH_MARKER}/")
 
 
 def _endpoint_root(endpoint: str) -> str:

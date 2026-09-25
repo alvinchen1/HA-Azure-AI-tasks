@@ -44,6 +44,12 @@ def _entity(endpoint: str) -> AzureAITaskEntity:
         (f"{V1_HOST}/openai/v1", True),
         # A classic host someone pasted with the v1 path is honoured as v1.
         (f"{CLASSIC}/openai/v1", True),
+        (f"{CLASSIC}/openai/v1/", True),
+        (f"{CLASSIC}/openai/v1/responses", True),
+        # /openai/v1 is matched as a whole path segment, not a substring.
+        (f"{CLASSIC}/openai/v10", False),
+        # A v1 host pasted without a scheme still resolves to the v1 surface.
+        ("my-resource.services.ai.azure.com", True),
         ("", False),
     ],
 )
