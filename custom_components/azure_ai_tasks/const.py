@@ -8,6 +8,17 @@ CONF_API_KEY = "api_key"
 CONF_CHAT_MODEL = "chat_model"
 CONF_IMAGE_MODEL = "image_model"
 
+# Azure exposes two OpenAI-compatible surfaces and this integration supports
+# both, picked automatically from the endpoint the user configured:
+#   * Classic Azure OpenAI ({resource}.openai.azure.com) - the deployment name is
+#     in the URL path and an "api-version" query parameter is required.
+#   * Azure AI Foundry "v1" ({resource}.services.ai.azure.com) - a single
+#     /openai/v1/... path, the model goes in the request body, and there is no
+#     api-version query at all.
+# See https://learn.microsoft.com/en-us/azure/ai-services/openai/api-version-lifecycle
+V1_HOST_MARKER = "services.ai.azure.com"
+V1_PATH_MARKER = "/openai/v1"
+
 # Default values
 DEFAULT_NAME = "Azure AI Tasks"
 DEFAULT_CHAT_MODEL = "gpt-4o"

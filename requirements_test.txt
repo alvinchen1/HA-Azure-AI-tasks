@@ -1,0 +1,15 @@
+# Test harness for the custom component.
+#
+# pytest-homeassistant-custom-component pins the Home Assistant version we test
+# against. The rest are requirements of the core components this integration
+# imports (ai_task -> conversation, camera, media_source); the harness does not
+# pull those in, and they must match the manifests of the pinned HA release, so
+# they are pinned here too.
+pytest-homeassistant-custom-component==0.13.316
+aiofiles
+hassil==3.5.0
+home-assistant-intents==2026.1.28
+PyTurboJPEG==1.8.0
+av==16.0.1
+numpy==2.3.2
+ha-ffmpeg==3.2.2
