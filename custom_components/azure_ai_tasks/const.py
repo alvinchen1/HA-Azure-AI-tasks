@@ -22,6 +22,7 @@ CONF_ENDPOINT = "endpoint"
 CONF_API_KEY = "api_key"
 CONF_CHAT_MODEL = "chat_model"
 CONF_IMAGE_MODEL = "image_model"
+CONF_IMAGE_SIZE = "image_size"
 
 # Azure exposes two OpenAI-compatible surfaces and this integration supports
 # both, picked automatically from the endpoint the user configured:
@@ -38,6 +39,7 @@ V1_PATH_MARKER = "/openai/v1"
 DEFAULT_NAME = "Azure AI Tasks"
 DEFAULT_CHAT_MODEL = "gpt-4o"
 DEFAULT_IMAGE_MODEL = "dall-e-3"
+DEFAULT_IMAGE_SIZE = "1024x1024"
 
 # Available models
 CHAT_MODELS = [
