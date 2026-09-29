@@ -3,7 +3,7 @@
 All notable changes to Azure AI Tasks are recorded here. Versions follow
 [semantic versioning](https://semver.org/).
 
-## Unreleased
+## 2.5.0
 
 ### Added
 
