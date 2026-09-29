@@ -18,13 +18,16 @@ from .const import (
     CONF_ENDPOINT, 
     CONF_CHAT_MODEL,
     CONF_IMAGE_MODEL,
+    CONF_IMAGE_SIZE,
     DEFAULT_NAME, 
     DEFAULT_CHAT_MODEL,
     DEFAULT_IMAGE_MODEL,
+    DEFAULT_IMAGE_SIZE,
     DOMAIN,
     CHAT_MODELS,
     IMAGE_MODELS
 )
+from .image_size import validate_image_size
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -36,6 +39,7 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
         vol.Required(CONF_API_KEY): str,
         vol.Optional(CONF_CHAT_MODEL, default=""): str,
         vol.Optional(CONF_IMAGE_MODEL, default=""): str,
+        vol.Optional(CONF_IMAGE_SIZE, default=DEFAULT_IMAGE_SIZE): validate_image_size,
     }
 )
 
@@ -130,6 +134,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                             CONF_API_KEY: user_input[CONF_API_KEY],
                             CONF_CHAT_MODEL: chat_model,
                             CONF_IMAGE_MODEL: image_model,
+                            CONF_IMAGE_SIZE: user_input.get(
+                                CONF_IMAGE_SIZE, DEFAULT_IMAGE_SIZE
+                            ),
                         },
                         # Models now live in data; clear any stale options copy so
                         # they can't shadow the reconfigured values.
@@ -149,6 +156,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Required(CONF_API_KEY, default=current.get(CONF_API_KEY, "")): str,
                 vol.Optional(CONF_CHAT_MODEL, default=current.get(CONF_CHAT_MODEL, "")): str,
                 vol.Optional(CONF_IMAGE_MODEL, default=current.get(CONF_IMAGE_MODEL, "")): str,
+                vol.Optional(
+                    CONF_IMAGE_SIZE,
+                    default=current.get(CONF_IMAGE_SIZE, DEFAULT_IMAGE_SIZE),
+                ): validate_image_size,
             }
         )
         return self.async_show_form(
@@ -217,6 +228,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             final_data = {
                 CONF_CHAT_MODEL: chat_model,
                 CONF_IMAGE_MODEL: image_model,
+                CONF_IMAGE_SIZE: user_input.get(CONF_IMAGE_SIZE, DEFAULT_IMAGE_SIZE),
             }
             
             _LOGGER.info("Saving configuration: %s", final_data)
@@ -237,6 +249,10 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                             self._config_entry.data.get(CONF_CHAT_MODEL, ""))
         current_image_model = (self._config_entry.options.get(CONF_IMAGE_MODEL) or 
                              self._config_entry.data.get(CONF_IMAGE_MODEL, ""))
+        current_image_size = (
+            self._config_entry.options.get(CONF_IMAGE_SIZE)
+            or self._config_entry.data.get(CONF_IMAGE_SIZE, DEFAULT_IMAGE_SIZE)
+        )
 
         _LOGGER.info("Schema defaults - chat: '%s', image: '%s'", 
                      current_chat_model, current_image_model)
@@ -250,5 +266,9 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             {
                 vol.Optional(CONF_CHAT_MODEL, default=chat_display): str,
                 vol.Optional(CONF_IMAGE_MODEL, default=image_display): str,
+                vol.Optional(
+                    CONF_IMAGE_SIZE,
+                    default=current_image_size,
+                ): validate_image_size,
             }
         )

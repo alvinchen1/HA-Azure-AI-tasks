@@ -28,10 +28,13 @@ from .const import (
     CONF_ENDPOINT,
     CONF_CHAT_MODEL,
     CONF_IMAGE_MODEL,
+    CONF_IMAGE_SIZE,
     DOMAIN,
+    DEFAULT_IMAGE_SIZE,
     V1_HOST_MARKER,
     V1_PATH_MARKER,
 )
+from .image_size import parse_image_size
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -47,7 +50,6 @@ VISION_MODELS = ["gpt-image-1", "gpt-image-1.5", "gpt-image-2", "flux.1-kontext-
 FLUX_MODEL = "flux.1-kontext-pro"
 
 # Image Generation Constants
-DEFAULT_IMAGE_SIZE = "1024x1024"
 DEFAULT_WIDTH = 1024
 DEFAULT_HEIGHT = 1024
 DEFAULT_MIME_TYPE = "image/png"
@@ -220,6 +222,24 @@ class AzureAITaskEntity(ai_task.AITaskEntity):
         configured_model = (self._config_entry.options.get(CONF_IMAGE_MODEL) or 
                            self._config_entry.data.get(CONF_IMAGE_MODEL, self._image_model))
         return configured_model.strip() if configured_model else None
+
+    @property
+    def image_size(self) -> str:
+        """Return the configured image size, defaulting for older entries."""
+        return (
+            self._config_entry.options.get(CONF_IMAGE_SIZE)
+            or self._config_entry.data.get(CONF_IMAGE_SIZE, DEFAULT_IMAGE_SIZE)
+        )
+
+    def _image_size_for_model(self, model: str) -> str:
+        """Use custom dimensions for GPT-image-2 and preserve other model defaults."""
+        if model.lower() != "gpt-image-2":
+            return DEFAULT_IMAGE_SIZE
+        try:
+            width, height = parse_image_size(self.image_size)
+        except ValueError as err:
+            raise HomeAssistantError(f"Invalid configured image size: {err}") from err
+        return f"{width}x{height}"
 
     def _is_vision_model(self, model: str | None) -> bool:
         """Check if a model supports vision/attachments."""
@@ -803,6 +823,7 @@ class AzureAITaskEntity(ai_task.AITaskEntity):
         
         # Configure parameters based on the specific model
         api_version = API_VERSION_IMAGE_LEGACY
+        image_size = self._image_size_for_model(image_model)
         if image_model == "gpt-image-1":
             payload.update({
                 "size": DEFAULT_IMAGE_SIZE,
@@ -819,9 +840,9 @@ class AzureAITaskEntity(ai_task.AITaskEntity):
                 "output_compression": 100,
             })
             api_version = API_VERSION_IMAGE_LATEST
-        elif image_model == "gpt-image-2":
+        elif image_model.lower() == "gpt-image-2":
             payload.update({
-                "size": DEFAULT_IMAGE_SIZE,
+                "size": image_size,
                 "quality": "high",
                 "output_format": "png",
                 "output_compression": 100,

@@ -130,6 +130,13 @@ data:
 - **style**: Image style for DALL-E 3 (natural, vivid)
 - **n**: Number of images to generate (1-10 for DALL-E 2, 1 for DALL-E 3)
 
+For **GPT-image-2**, set the image size in the integration's setup, reconfigure,
+or options form. Custom `WIDTHxHEIGHT` values are supported, for example
+`800x480` and `1200x1600`. Both dimensions must be divisible by 16, the aspect
+ratio must be between 1:3 and 3:1 (inclusive), and width/height may not exceed
+3840/2160 respectively. The default is `1024x1024`; this setting does not
+change the sizes sent to other image models.
+
 ### Image/Video Analysis with Attachments
 Example service calls for analyzing images or camera streams:
 
@@ -175,6 +182,7 @@ data:
 **Image Models**: Supported image generation models:
 - **dall-e-2**: Classic DALL-E model with multiple size options
 - **dall-e-3**: Latest DALL-E model with enhanced quality and style controls
+- **gpt-image-2**: GPT image generation with configurable custom dimensions
 
 ## Requirements
 

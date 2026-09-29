@@ -3,6 +3,13 @@
 All notable changes to Azure AI Tasks are recorded here. Versions follow
 [semantic versioning](https://semver.org/).
 
+## Unreleased
+
+### Added
+
+- GPT-image-2 supports configurable custom image dimensions, validated against
+  the model's divisibility, aspect-ratio, and maximum-dimension requirements.
+
 ## 2.4.0
 
 ### Changed
