@@ -3,6 +3,15 @@
 All notable changes to Azure AI Tasks are recorded here. Versions follow
 [semantic versioning](https://semver.org/).
 
+## 2.5.1
+
+### Fixed
+
+- Fixed setup and configuration forms failing to load in Home Assistant. The
+  custom GPT-image-2 dimension validator could not be serialized for the
+  frontend; dimensions are now validated after submission while the form schema
+  remains frontend-compatible.
+
 ## 2.5.0
 
 ### Added
