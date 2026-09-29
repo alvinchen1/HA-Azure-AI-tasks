@@ -15,5 +15,5 @@
     "aiohttp>=3.8.0",
     "packaging>=21.0"
   ],
-  "version": "2.4.0"
+  "version": "2.5.1"
 }

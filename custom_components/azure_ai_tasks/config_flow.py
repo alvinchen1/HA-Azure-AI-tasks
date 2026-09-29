@@ -39,7 +39,7 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
         vol.Required(CONF_API_KEY): str,
         vol.Optional(CONF_CHAT_MODEL, default=""): str,
         vol.Optional(CONF_IMAGE_MODEL, default=""): str,
-        vol.Optional(CONF_IMAGE_SIZE, default=DEFAULT_IMAGE_SIZE): validate_image_size,
+        vol.Optional(CONF_IMAGE_SIZE, default=DEFAULT_IMAGE_SIZE): str,
     }
 )
 
@@ -80,19 +80,30 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
 
         try:
-            # Validate that at least one model is configured
+            user_input[CONF_IMAGE_SIZE] = validate_image_size(
+                user_input.get(CONF_IMAGE_SIZE, DEFAULT_IMAGE_SIZE)
+            )
+        except vol.Invalid:
+            errors["base"] = "invalid_image_size"
+
+        if not errors:
             chat_model = user_input.get(CONF_CHAT_MODEL, "").strip()
             image_model = user_input.get(CONF_IMAGE_MODEL, "").strip()
-            
+
             if not chat_model and not image_model:
                 errors["base"] = "no_models_configured"
             else:
-                await self._test_credentials(user_input[CONF_ENDPOINT], user_input[CONF_API_KEY])
-        except Exception:  # pylint: disable=broad-except
-            _LOGGER.exception("Unexpected exception")
-            errors["base"] = "unknown"
-        else:
-            return self.async_create_entry(title=user_input[CONF_NAME], data=user_input)
+                try:
+                    await self._test_credentials(
+                        user_input[CONF_ENDPOINT], user_input[CONF_API_KEY]
+                    )
+                except Exception:  # pylint: disable=broad-except
+                    _LOGGER.exception("Unexpected exception")
+                    errors["base"] = "unknown"
+                else:
+                    return self.async_create_entry(
+                        title=user_input[CONF_NAME], data=user_input
+                    )
 
         return self.async_show_form(
             step_id="user", data_schema=STEP_USER_DATA_SCHEMA, errors=errors
@@ -111,12 +122,19 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
 
         if user_input is not None:
+            try:
+                user_input[CONF_IMAGE_SIZE] = validate_image_size(
+                    user_input.get(CONF_IMAGE_SIZE, DEFAULT_IMAGE_SIZE)
+                )
+            except vol.Invalid:
+                errors["base"] = "invalid_image_size"
+
             chat_model = user_input.get(CONF_CHAT_MODEL, "").strip()
             image_model = user_input.get(CONF_IMAGE_MODEL, "").strip()
 
-            if not chat_model and not image_model:
+            if not errors and not chat_model and not image_model:
                 errors["base"] = "no_models_configured"
-            else:
+            elif not errors:
                 try:
                     await self._test_credentials(
                         user_input[CONF_ENDPOINT], user_input[CONF_API_KEY]
@@ -159,7 +177,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Optional(
                     CONF_IMAGE_SIZE,
                     default=current.get(CONF_IMAGE_SIZE, DEFAULT_IMAGE_SIZE),
-                ): validate_image_size,
+                ): str,
             }
         )
         return self.async_show_form(
@@ -197,6 +215,17 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         """Handle options flow."""
         if user_input is not None:
             _LOGGER.info("Options flow received input: %s", user_input)
+
+            try:
+                image_size = validate_image_size(
+                    user_input.get(CONF_IMAGE_SIZE, DEFAULT_IMAGE_SIZE)
+                )
+            except vol.Invalid:
+                return self.async_show_form(
+                    step_id="init",
+                    data_schema=self._get_options_schema(),
+                    errors={"base": "invalid_image_size"},
+                )
             
             # Get values from form submission
             chat_model = user_input.get(CONF_CHAT_MODEL, "")
@@ -228,7 +257,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             final_data = {
                 CONF_CHAT_MODEL: chat_model,
                 CONF_IMAGE_MODEL: image_model,
-                CONF_IMAGE_SIZE: user_input.get(CONF_IMAGE_SIZE, DEFAULT_IMAGE_SIZE),
+                CONF_IMAGE_SIZE: image_size,
             }
             
             _LOGGER.info("Saving configuration: %s", final_data)
@@ -269,6 +298,6 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 vol.Optional(
                     CONF_IMAGE_SIZE,
                     default=current_image_size,
-                ): validate_image_size,
+                ): str,
             }
         )

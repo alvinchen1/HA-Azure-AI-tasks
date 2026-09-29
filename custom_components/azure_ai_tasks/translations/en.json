@@ -29,7 +29,8 @@
     "error": {
       "unknown": "Unexpected error occurred",
       "cannot_connect": "Failed to connect - check the endpoint URL and API key",
-      "no_models_configured": "At least one model (chat or image) must be configured"
+      "no_models_configured": "At least one model (chat or image) must be configured",
+      "invalid_image_size": "Enter valid image dimensions as WIDTHxHEIGHT, divisible by 16 and within the supported size limits"
     },
     "abort": {
       "already_configured": "Device is already configured",
