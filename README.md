@@ -114,41 +114,26 @@ data:
 <img width="1413" height="1164" alt="image" src="https://github.com/user-attachments/assets/b1d7c898-bb54-4398-838f-838f4a5e26fa" />
 <img width="1360" height="1246" alt="Generated AI image of a futuristic smart home with holographic displays and AI assistants" src="https://github.com/user-attachments/assets/f748fffd-a379-4745-845f-1fecdff31e44" />
 
-**GPT-image-2 with custom dimensions:**
-
-This example requires a Home Assistant core version that accepts and forwards
-the optional `size` field for `ai_task.generate_image`. On versions without
-that core change, omit `size`; otherwise Home Assistant rejects the action
-before this integration runs.
-
-```yaml
-action: ai_task.generate_image
-data:
-  task_name: custom-size image
-  instructions: "A cozy living room during sunset with warm lighting"
-  entity_id: ai_task.azure_ai_tasks
-  size: "1200×1600"
-```
-
-The custom `size` shown here is for GPT-image-2; other image models keep their
-existing sizing behavior.
-
 **GPT-image-2** uses Azure's `1024x1024` default. The integration does not
-expose an image-size configuration field. Although the integration can forward
-a custom size when one is provided to it, Home Assistant core must include
-`size` in the action schema and pass it to the AI Task entity first. If `size`
-is omitted, the integration continues using `1024x1024`.
+expose an image-size configuration field. The standard Home Assistant
+`ai_task.generate_image` action rejects an extra `size` field before the
+integration receives the request, so custom dimensions cannot currently be
+selected through that action. Do not add `size` to the action data; it will
+fail validation in Home Assistant. Calls through the action use the default
+`1024x1024`.
 
-When a custom size is supported by the caller, GPT-image-2 requires both
-dimensions to be multiples of 16, an aspect ratio between 1:3 and 3:1
-(inclusive), no side longer than 3840 pixels, and between 655,360 and
-8,294,400 total pixels. The minimum total pixel count is 655,360 (for example,
-`640x1024`); dimensions must still satisfy all the other constraints.
-Dimensions can be written with ASCII `x` or the Unicode multiplication sign
-`×`. Valid examples include `800x832` (near the minimum pixel count),
-`1024x1024`, `1200×1600`, and `3840x1280`. `800x480` is too small. If a
-provided size violates these constraints, the integration reports which
-requirement to adjust. Other image models retain their existing request sizes.
+GPT-image-2 dimensions must be multiples of 16, have an aspect ratio between
+1:3 and 3:1 (inclusive), be no longer than 3840 pixels on either side, and
+contain between 655,360 and 8,294,400 total pixels. The smallest allowed total
+is 655,360 pixels; `640x1024` is one valid size at that limit. Other valid
+examples are `800x832`, `1024x1024`, `1200×1600`, and `3840x1280`. When a size
+reaches the entity, its validator accepts ASCII `x` or the Unicode
+multiplication sign `×`; this does not make `size` an accepted field of the
+standard Home Assistant action.
+`800x480` is too small. The integration's validation reports which constraint
+an invalid size violates when a size value reaches the entity; it cannot
+validate `size` from the standard action because Home Assistant rejects it
+first. Other image models retain their existing request sizes.
 
 ### Image/Video Analysis with Attachments
 Example service calls for analyzing images or camera streams:

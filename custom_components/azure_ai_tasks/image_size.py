@@ -32,7 +32,7 @@ def parse_image_size(value: str) -> tuple[int, int]:
     if width % 16 or height % 16:
         raise ValueError(
             "GPT-image-2 requires both dimensions to be multiples of 16 "
-            "(for example, 1216x1600)"
+            "(for example, 1200x1600)"
         )
     if width > MAX_IMAGE_DIMENSION or height > MAX_IMAGE_DIMENSION:
         raise ValueError(
