@@ -1,5 +1,6 @@
 """Tests for the custom image-size AI Task action."""
 from contextlib import nullcontext
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
@@ -8,6 +9,7 @@ import pytest
 from homeassistant.components import ai_task
 
 from custom_components.azure_ai_tasks import services
+from custom_components.azure_ai_tasks.const import DOMAIN
 
 
 @pytest.mark.parametrize("size", [None, "1024x640"])
@@ -20,6 +22,37 @@ def test_service_schema_size_is_optional(size: str | None) -> None:
     validated = services.SERVICE_SCHEMA(data)
 
     assert validated.get("size") == size
+
+
+def test_custom_service_registers_in_integration_domain() -> None:
+    """The action belongs to the integration so its UI schema can be loaded."""
+    hass = MagicMock()
+    hass.data = {}
+
+    services.async_register_services(hass, "entry-1")
+
+    assert hass.services.async_register.call_args.args[:2] == (
+        DOMAIN,
+        services.SERVICE_GENERATE_IMAGE_WITH_SIZE,
+    )
+
+
+def test_custom_service_description_has_form_fields() -> None:
+    """The UI-facing service description declares the available form fields."""
+    import yaml
+
+    description = yaml.safe_load(
+        Path(services.__file__).with_name("services.yaml").read_text()
+    )["generate_image_with_size"]
+
+    assert set(description["fields"]) == {
+        "task_name",
+        "instructions",
+        "entity_id",
+        "attachments",
+        "size",
+    }
+    assert description["fields"]["size"]["selector"] == {"text": None}
 
 
 @pytest.mark.asyncio

@@ -1,0 +1,37 @@
+generate_image_with_size:
+  name: Generate image with size
+  description: Generate an image using an Azure AI Task entity.
+  fields:
+    task_name:
+      name: Task name
+      description: Name of the image generation task.
+      required: true
+      selector:
+        text:
+    instructions:
+      name: Instructions
+      description: Describe the image to generate.
+      required: true
+      selector:
+        text:
+          multiline: true
+    entity_id:
+      name: Entity
+      description: AI Task entity to run the image generation on.
+      selector:
+        entity:
+          filter:
+            domain: ai_task
+    attachments:
+      name: Attachments
+      description: Optional media to use as a reference.
+      selector:
+        media:
+          accept:
+            - image/*
+          multiple: true
+    size:
+      name: Size
+      description: Optional image dimensions, for example 1024x640.
+      selector:
+        text:
