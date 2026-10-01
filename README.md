@@ -196,7 +196,7 @@ data:
 **Image Models**: Supported image generation models:
 - **dall-e-2**: Classic DALL-E model with multiple size options
 - **dall-e-3**: Latest DALL-E model with enhanced quality and style controls
-- **gpt-image-2**: GPT image generation with configurable custom dimensions
+- **gpt-image-2**: GPT image generation using Azure's default `1024x1024` size
 
 ## Requirements
 

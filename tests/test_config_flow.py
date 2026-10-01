@@ -18,13 +18,15 @@ async def test_user_flow_schema_is_serializable(
     )
 
     assert result["type"] == "form"
-    schema = convert(result["data_schema"])
-    assert all(field.get("name") != "image_size" for field in schema)
+    convert(result["data_schema"])
+    schema_keys = result["data_schema"].schema
+    assert all(getattr(key, "schema", key) != "image_size" for key in schema_keys)
 
 
 def test_options_flow_has_no_image_size_option() -> None:
     """The options form no longer exposes a configurable image size."""
     config_entry = MagicMock(options={}, data={})
-    schema = convert(OptionsFlowHandler(config_entry)._get_options_schema())
+    schema = OptionsFlowHandler(config_entry)._get_options_schema()
+    convert(schema)
 
-    assert all(field.get("name") != "image_size" for field in schema)
+    assert all(getattr(key, "schema", key) != "image_size" for key in schema.schema)
