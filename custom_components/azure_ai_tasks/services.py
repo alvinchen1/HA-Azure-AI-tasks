@@ -28,8 +28,10 @@ from homeassistant.helpers import config_validation as cv, selector
 from homeassistant.helpers.chat_session import async_get_chat_session
 from homeassistant.util import RE_SANITIZE_FILENAME, dt as dt_util, slugify
 
+from .const import DOMAIN
+
 SERVICE_GENERATE_IMAGE_WITH_SIZE = "generate_image_with_size"
-DATA_SERVICE_ENTRY_IDS = f"{AI_TASK_DOMAIN}_image_size_service_entries"
+DATA_SERVICE_ENTRY_IDS = f"{DOMAIN}_image_size_service_entries"
 
 
 @dataclass(slots=True)
@@ -131,13 +133,13 @@ def async_register_services(hass: HomeAssistant, entry_id: str) -> None:
     """Register the custom AI Task service once for all config entries."""
     entry_ids = hass.data.get(DATA_SERVICE_ENTRY_IDS)
     if not entry_ids:
-        if hass.services.has_service(AI_TASK_DOMAIN, SERVICE_GENERATE_IMAGE_WITH_SIZE):
+        if hass.services.has_service(DOMAIN, SERVICE_GENERATE_IMAGE_WITH_SIZE):
             raise HomeAssistantError(
-                f"Service {AI_TASK_DOMAIN}.{SERVICE_GENERATE_IMAGE_WITH_SIZE} "
+                f"Service {DOMAIN}.{SERVICE_GENERATE_IMAGE_WITH_SIZE} "
                 "is already registered"
             )
         hass.services.async_register(
-            AI_TASK_DOMAIN,
+            DOMAIN,
             SERVICE_GENERATE_IMAGE_WITH_SIZE,
             async_service_generate_image_with_size,
             schema=SERVICE_SCHEMA,
@@ -154,8 +156,8 @@ def async_unregister_services(hass: HomeAssistant, entry_id: str) -> None:
         return
     entry_ids.remove(entry_id)
     if not entry_ids:
-        if hass.services.has_service(AI_TASK_DOMAIN, SERVICE_GENERATE_IMAGE_WITH_SIZE):
+        if hass.services.has_service(DOMAIN, SERVICE_GENERATE_IMAGE_WITH_SIZE):
             hass.services.async_remove(
-                AI_TASK_DOMAIN, SERVICE_GENERATE_IMAGE_WITH_SIZE
+                DOMAIN, SERVICE_GENERATE_IMAGE_WITH_SIZE
             )
         hass.data.pop(DATA_SERVICE_ENTRY_IDS, None)

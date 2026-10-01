@@ -133,12 +133,13 @@ data:
 **GPT-image-2** uses Azure's `1024x1024` default unless a valid `size` option is
 supplied. The standard Home Assistant `ai_task.generate_image` action does not
 accept a `size` field, so the integration provides
-`ai_task.generate_image_with_size`. Its `size` option is optional; omitting it
-uses the default. Existing configuration is unchanged when upgrading from
-version 2.5.2.
+`azure_ai_tasks.generate_image_with_size`, with fields available in Home
+Assistant's Actions UI as well as YAML. Its `size` option is optional;
+omitting it uses the default. Existing configuration is unchanged when
+upgrading from version 2.5.2.
 
 ```yaml
-action: ai_task.generate_image_with_size
+action: azure_ai_tasks.generate_image_with_size
 data:
   task_name: Test
   instructions: "A landscape with a mountain lake at sunrise"

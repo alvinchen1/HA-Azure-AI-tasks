@@ -3,12 +3,20 @@
 All notable changes to Azure AI Tasks are recorded here. Versions follow
 [semantic versioning](https://semver.org/).
 
+## 3.0.1
+
+### Fixed
+
+- The custom image-size action is now registered in the integration's own
+  service domain and includes service descriptions, so its fields appear in
+  Home Assistant's Actions UI instead of requiring YAML mode.
+
 ## 3.0.0
 
 ### Added
 
-- Added the `ai_task.generate_image_with_size` action with an optional `size`
-  field. It uses the same configured AI Task entity and output as
+- Added the `azure_ai_tasks.generate_image_with_size` action with an optional
+  `size` field. It uses the same configured AI Task entity and output as
   `ai_task.generate_image`; for GPT-image-2, an omitted size keeps Azure's
   `1024x1024` default and a supplied size is validated and forwarded.
 - Existing configuration is unchanged. Upgrading from 2.5.2 requires no
