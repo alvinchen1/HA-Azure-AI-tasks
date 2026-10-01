@@ -16,9 +16,12 @@ from custom_components.azure_ai_tasks.image_size import (
     [
         ("1024x640", (1024, 640)),
         ("1200x1600", (1200, 1600)),
+        ("1200×1600", (1200, 1600)),
+        ("640x1024", (640, 1024)),
         ("3840x1280", (3840, 1280)),
         ("1280x3840", (1280, 3840)),
         (" 1024x640 ", (1024, 640)),
+        ("800x832", (800, 832)),
     ],
 )
 def test_parse_valid_image_sizes(value: str, expected: tuple[int, int]) -> None:
@@ -53,6 +56,22 @@ def test_parse_rejects_invalid_image_sizes(value: str) -> None:
         parse_image_size(value)
 
 
+@pytest.mark.parametrize(
+    ("value", "message"),
+    [
+        ("1200*1600", "WIDTHxHEIGHT or WIDTH×HEIGHT"),
+        ("800x480", "655,360 and 8,294,400 total pixels"),
+        ("1024x600", "multiples of 16"),
+        ("4000x1280", "cannot exceed 3840 pixels"),
+        ("368x1152", "aspect ratio must be between 1:3 and 3:1"),
+    ],
+)
+def test_parse_errors_explain_how_to_correct_size(value: str, message: str) -> None:
+    """Invalid sizes tell users which GPT-image-2 requirement to fix."""
+    with pytest.raises(ValueError, match=message):
+        parse_image_size(value)
+
+
 def test_size_option_is_used_only_for_gpt_image_2() -> None:
     """GPT-image-2 accepts a request size; legacy config values are ignored."""
     config_entry = MagicMock()
@@ -70,9 +89,13 @@ def test_size_option_is_used_only_for_gpt_image_2() -> None:
 
     assert entity._image_size_for_model("gpt-image-2") == "1024x1024"
     assert entity._image_size_for_model("gpt-image-2", "1024x640") == "1024x640"
+    assert entity._image_size_for_model("gpt-image-2", "1200×1600") == "1200x1600"
     assert entity._image_size_for_model("gpt-image-2", " 1024x640 ") == "1024x640"
     assert entity._image_size_for_model("dall-e-3", "1024x640") == "1024x1024"
-    with pytest.raises(HomeAssistantError, match="Invalid image size option"):
+    with pytest.raises(
+        HomeAssistantError,
+        match="Invalid image size option:.*655,360 and 8,294,400 total pixels",
+    ):
         entity._image_size_for_model("gpt-image-2", "800x480")
 
 

@@ -3,6 +3,21 @@
 All notable changes to Azure AI Tasks are recorded here. Versions follow
 [semantic versioning](https://semver.org/).
 
+## 2.5.3
+
+### Fixed
+
+- GPT-image-2 custom dimensions now accept either ASCII `x` or the Unicode
+  multiplication sign `×`, and invalid dimensions report the specific model
+  requirement that needs to be corrected.
+
+### Documentation
+
+- Documented GPT-image-2's minimum total pixel count and examples of valid
+  dimensions. Home Assistant's `ai_task.generate_image` action still rejects
+  `size` before dispatching the request, so custom sizes cannot be set through
+  that action until Home Assistant adds support.
+
 ## 2.5.2
 
 ### Fixed
