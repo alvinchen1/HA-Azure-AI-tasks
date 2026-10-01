@@ -28,7 +28,6 @@ from .const import (
     CONF_ENDPOINT,
     CONF_CHAT_MODEL,
     CONF_IMAGE_MODEL,
-    CONF_IMAGE_SIZE,
     DOMAIN,
     DEFAULT_IMAGE_SIZE,
     V1_HOST_MARKER,
@@ -223,22 +222,16 @@ class AzureAITaskEntity(ai_task.AITaskEntity):
                            self._config_entry.data.get(CONF_IMAGE_MODEL, self._image_model))
         return configured_model.strip() if configured_model else None
 
-    @property
-    def image_size(self) -> str:
-        """Return the configured image size, defaulting for older entries."""
-        return (
-            self._config_entry.options.get(CONF_IMAGE_SIZE)
-            or self._config_entry.data.get(CONF_IMAGE_SIZE, DEFAULT_IMAGE_SIZE)
-        )
-
-    def _image_size_for_model(self, model: str) -> str:
-        """Use custom dimensions for GPT-image-2 and preserve other model defaults."""
+    def _image_size_for_model(self, model: str, size: str | None = None) -> str:
+        """Use a supplied size for GPT-image-2 and preserve other model defaults."""
         if model.lower() != "gpt-image-2":
             return DEFAULT_IMAGE_SIZE
+        if size is None:
+            return DEFAULT_IMAGE_SIZE
         try:
-            width, height = parse_image_size(self.image_size)
+            width, height = parse_image_size(size)
         except ValueError as err:
-            raise HomeAssistantError(f"Invalid configured image size: {err}") from err
+            raise HomeAssistantError(f"Invalid image size option: {err}") from err
         return f"{width}x{height}"
 
     def _is_vision_model(self, model: str | None) -> bool:
@@ -812,7 +805,8 @@ class AzureAITaskEntity(ai_task.AITaskEntity):
         session: aiohttp.ClientSession,
         user_message: str,
         image_model: str,
-        chat_log: conversation.ChatLog
+        chat_log: conversation.ChatLog,
+        size: str | None = None,
     ) -> ai_task.GenImageTaskResult:
         """Handle standard text-to-image generation."""
         payload = {
@@ -823,7 +817,7 @@ class AzureAITaskEntity(ai_task.AITaskEntity):
         
         # Configure parameters based on the specific model
         api_version = API_VERSION_IMAGE_LEGACY
-        image_size = self._image_size_for_model(image_model)
+        image_size = self._image_size_for_model(image_model, size)
         if image_model == "gpt-image-1":
             payload.update({
                 "size": DEFAULT_IMAGE_SIZE,
@@ -923,7 +917,11 @@ class AzureAITaskEntity(ai_task.AITaskEntity):
             # Standard text-to-image generation
             else:
                 return await self._handle_standard_image_generation(
-                    session, user_message, image_model, chat_log
+                    session,
+                    user_message,
+                    image_model,
+                    chat_log,
+                    getattr(task, "size", None),
                 )
                 
         except aiohttp.ClientError as err:

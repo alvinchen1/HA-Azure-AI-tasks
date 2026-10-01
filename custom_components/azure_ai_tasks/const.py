@@ -22,7 +22,6 @@ CONF_ENDPOINT = "endpoint"
 CONF_API_KEY = "api_key"
 CONF_CHAT_MODEL = "chat_model"
 CONF_IMAGE_MODEL = "image_model"
-CONF_IMAGE_SIZE = "image_size"
 
 # Azure exposes two OpenAI-compatible surfaces and this integration supports
 # both, picked automatically from the endpoint the user configured:

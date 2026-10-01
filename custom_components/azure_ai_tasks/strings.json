@@ -3,34 +3,31 @@
     "step": {
       "user": {
         "title": "Set up Azure AI Tasks",
-        "description": "Enter your Azure AI endpoint, API key, and model(s). At least one model must be configured. The image size is used by GPT-image-2. Both endpoint styles work: classic Azure OpenAI (a *.openai.azure.com resource) and Azure AI Foundry v1 (a *.services.ai.azure.com resource) - the right API is selected automatically.",
+        "description": "Enter your Azure AI endpoint, API key, and model(s). At least one model must be configured. Both endpoint styles work: classic Azure OpenAI (a *.openai.azure.com resource) and Azure AI Foundry v1 (a *.services.ai.azure.com resource) - the right API is selected automatically.",
         "data": {
           "name": "Name",
           "endpoint": "Azure AI Endpoint URL (openai.azure.com or services.ai.azure.com)",
           "api_key": "API Key",
           "chat_model": "Chat Model (optional)",
-          "image_model": "Image Model (optional)",
-          "image_size": "GPT-image-2 image size (WIDTHxHEIGHT)"
+          "image_model": "Image Model (optional)"
         }
       },
       "reconfigure": {
         "title": "Reconfigure Azure AI Tasks",
-        "description": "Update your Azure AI endpoint, API key, model(s), and GPT-image-2 image size. At least one model must be configured. Both endpoint styles work: classic Azure OpenAI (a *.openai.azure.com resource) and Azure AI Foundry v1 (a *.services.ai.azure.com resource) - the right API is selected automatically.",
+        "description": "Update your Azure AI endpoint, API key, and model(s). At least one model must be configured. Both endpoint styles work: classic Azure OpenAI (a *.openai.azure.com resource) and Azure AI Foundry v1 (a *.services.ai.azure.com resource) - the right API is selected automatically.",
         "data": {
           "name": "Name",
           "endpoint": "Azure AI Endpoint URL (openai.azure.com or services.ai.azure.com)",
           "api_key": "API Key",
           "chat_model": "Chat Model (optional)",
-          "image_model": "Image Model (optional)",
-          "image_size": "GPT-image-2 image size (WIDTHxHEIGHT)"
+          "image_model": "Image Model (optional)"
         }
       }
     },
     "error": {
       "unknown": "Unexpected error occurred",
       "cannot_connect": "Failed to connect - check the endpoint URL and API key",
-      "no_models_configured": "At least one model (chat or image) must be configured",
-      "invalid_image_size": "Enter valid image dimensions as WIDTHxHEIGHT, divisible by 16 and within the supported size limits"
+      "no_models_configured": "At least one model (chat or image) must be configured"
     },
     "abort": {
       "already_configured": "Device is already configured",
@@ -41,11 +38,10 @@
     "step": {
       "init": {
         "title": "Azure AI Tasks Options",
-        "description": "Configure your preferred models and GPT-image-2 image size. At least one model must be configured.",
+        "description": "Configure your preferred models. At least one model must be configured.",
         "data": {
           "chat_model": "Chat Model (optional)",
-          "image_model": "Image Model (optional)",
-          "image_size": "GPT-image-2 image size (WIDTHxHEIGHT)"
+          "image_model": "Image Model (optional)"
         }
       }
     },

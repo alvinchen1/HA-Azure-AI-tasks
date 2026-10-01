@@ -1,9 +1,12 @@
 """Tests for the Azure AI Tasks config flow."""
 
+from unittest.mock import MagicMock
+
 from homeassistant.data_entry_flow import SOURCE_USER
 from voluptuous_serialize import convert
 
 from custom_components.azure_ai_tasks.const import DOMAIN
+from custom_components.azure_ai_tasks.config_flow import OptionsFlowHandler
 
 
 async def test_user_flow_schema_is_serializable(
@@ -16,26 +19,14 @@ async def test_user_flow_schema_is_serializable(
 
     assert result["type"] == "form"
     convert(result["data_schema"])
+    schema_keys = result["data_schema"].schema
+    assert all(getattr(key, "schema", key) != "image_size" for key in schema_keys)
 
 
-async def test_invalid_image_size_returns_a_flow_error(
-    hass, auto_enable_custom_integrations
-) -> None:
-    """Image size remains validated after switching to a serializable schema."""
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": SOURCE_USER}
-    )
+def test_options_flow_has_no_image_size_option() -> None:
+    """The options form no longer exposes a configurable image size."""
+    config_entry = MagicMock(options={}, data={})
+    schema = OptionsFlowHandler(config_entry)._get_options_schema()
+    convert(schema)
 
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        user_input={
-            "name": "Azure AI Tasks",
-            "endpoint": "https://my-resource.openai.azure.com",
-            "api_key": "secret",
-            "chat_model": "gpt-4o",
-            "image_model": "",
-            "image_size": "801x480",
-        },
-    )
-
-    assert result["errors"] == {"base": "invalid_image_size"}
+    assert all(getattr(key, "schema", key) != "image_size" for key in schema.schema)

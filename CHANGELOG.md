@@ -3,6 +3,16 @@
 All notable changes to Azure AI Tasks are recorded here. Versions follow
 [semantic versioning](https://semver.org/).
 
+## 2.5.2
+
+### Fixed
+
+- Removed the GPT-image-2 image-size field from the integration's setup,
+  reconfigure, and options forms. GPT-image-2 now uses Azure's `1024x1024`
+  default unless a valid `size` is supplied to the image request. Home
+  Assistant's `ai_task.generate_image` action currently does not accept a
+  `size` field, so calls through that action use the default.
+
 ## 2.5.1
 
 ### Fixed
