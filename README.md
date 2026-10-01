@@ -101,55 +101,39 @@ data:
 ![HA Azure AI Task example](https://github.com/user-attachments/assets/592ec039-20ea-436f-a6f0-caf88bef9b56)
 
 ### 🎨 Image Generation
-Example service calls for generating images with DALL-E:
+Example service calls for generating images:
 
 **Basic Image Generation:**
 ```yaml
-action: ai_image.generate_image
+action: ai_task.generate_image
 data:
-  prompt: "A futuristic smart home with holographic displays and AI assistants"
-  entity_id: ai_image.azure_ai_tasks_dall_e_3
+  task_name: smart home image
+  instructions: "A futuristic smart home with holographic displays and AI assistants"
+  entity_id: ai_task.azure_ai_tasks
 ```
 <img width="1413" height="1164" alt="image" src="https://github.com/user-attachments/assets/b1d7c898-bb54-4398-838f-838f4a5e26fa" />
 <img width="1360" height="1246" alt="Generated AI image of a futuristic smart home with holographic displays and AI assistants" src="https://github.com/user-attachments/assets/f748fffd-a379-4745-845f-1fecdff31e44" />
 
-**Advanced Image Generation with Parameters:**
-```yaml
-action: ai_image.generate_image
-data:
-  prompt: "A cozy living room during sunset with warm lighting"
-  entity_id: ai_image.azure_ai_tasks_dall_e_3
-  size: "1024x1024"
-  quality: "hd"
-  style: "vivid"
-```
+**GPT-image-2** uses Azure's `1024x1024` default. The integration does not
+expose an image-size configuration field. The standard Home Assistant
+`ai_task.generate_image` action rejects an extra `size` field before the
+integration receives the request, so custom dimensions cannot currently be
+selected through that action. Do not add `size` to the action data; it will
+fail validation in Home Assistant. Calls through the action use the default
+`1024x1024`.
 
-**Supported DALL-E Parameters:**
-- **size**: Image dimensions (DALL-E 2: 256x256, 512x512, 1024x1024; DALL-E 3: 1024x1024, 1024x1792, 1792x1024)
-- **quality**: Image quality for DALL-E 3 (standard, hd)  
-- **style**: Image style for DALL-E 3 (natural, vivid)
-- **n**: Number of images to generate (1-10 for DALL-E 2, 1 for DALL-E 3)
-
-**GPT-image-2** uses Azure's `1024x1024` default unless a valid `size` option is
-supplied to the image-generation request. The integration does not expose an
-image-size configuration field. Home Assistant's `ai_task.generate_image`
-action currently does not accept a `size` field, so calls through this action
-use the default; including `size` in its action data is rejected by Home
-Assistant before the integration runs.
-
-```yaml
-action: ai_task.generate_image
-data:
-  task_name: Test
-  instructions: "A landscape with a mountain lake at sunrise"
-  entity_id: ai_task.azure_ai_tasks
-```
-
-When an explicit size reaches the GPT-image-2 request, both dimensions must be
-divisible by 16, the aspect ratio must be between 1:3 and 3:1 (inclusive),
-neither dimension may exceed 3840, and the total pixel count must be between
-655,360 and 8,294,400. For example, `800x480` is too small for Azure
-GPT-image-2. Other image models retain their existing request sizes.
+GPT-image-2 dimensions must be multiples of 16, have an aspect ratio between
+1:3 and 3:1 (inclusive), be no longer than 3840 pixels on either side, and
+contain between 655,360 and 8,294,400 total pixels. The smallest allowed total
+is 655,360 pixels; `640x1024` is one valid size at that limit. Other valid
+examples are `800x832`, `1024x1024`, `1200×1600`, and `3840x1280`. When a size
+reaches the entity, its validator accepts ASCII `x` or the Unicode
+multiplication sign `×`; this does not make `size` an accepted field of the
+standard Home Assistant action.
+`800x480` is too small. The integration's validation reports which constraint
+an invalid size violates when a size value reaches the entity; it cannot
+validate `size` from the standard action because Home Assistant rejects it
+first. Other image models retain their existing request sizes.
 
 ### Image/Video Analysis with Attachments
 Example service calls for analyzing images or camera streams:
@@ -194,8 +178,8 @@ data:
 - **Note**: GPT-5 models (including gpt-5-mini) are fully supported and use the max_completion_tokens parameter automatically
 
 **Image Models**: Supported image generation models:
-- **dall-e-2**: Classic DALL-E model with multiple size options
-- **dall-e-3**: Latest DALL-E model with enhanced quality and style controls
+- **dall-e-2**: Classic DALL-E image generation
+- **dall-e-3**: DALL-E image generation
 - **gpt-image-2**: GPT image generation using Azure's default `1024x1024` size
 
 ## Requirements
