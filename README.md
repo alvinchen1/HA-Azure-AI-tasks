@@ -131,25 +131,26 @@ data:
 - **n**: Number of images to generate (1-10 for DALL-E 2, 1 for DALL-E 3)
 
 **GPT-image-2** uses Azure's `1024x1024` default unless a valid `size` option is
-supplied to the image-generation request. The integration does not expose an
-image-size configuration field. Home Assistant's `ai_task.generate_image`
-action currently does not accept a `size` field, so calls through this action
-use the default; including `size` in its action data is rejected by Home
-Assistant before the integration runs.
+supplied. The standard Home Assistant `ai_task.generate_image` action does not
+accept a `size` field, so the integration provides
+`ai_task.generate_image_with_size`. Its `size` option is optional; omitting it
+uses the default. Existing configuration is unchanged when upgrading from
+version 2.5.2.
 
 ```yaml
-action: ai_task.generate_image
+action: ai_task.generate_image_with_size
 data:
   task_name: Test
   instructions: "A landscape with a mountain lake at sunrise"
   entity_id: ai_task.azure_ai_tasks
+  size: "1024x640"
 ```
 
-When an explicit size reaches the GPT-image-2 request, both dimensions must be
-divisible by 16, the aspect ratio must be between 1:3 and 3:1 (inclusive),
-neither dimension may exceed 3840, and the total pixel count must be between
-655,360 and 8,294,400. For example, `800x480` is too small for Azure
-GPT-image-2. Other image models retain their existing request sizes.
+`size` may be omitted. For GPT-image-2, an explicit size must have both
+dimensions divisible by 16, an aspect ratio between 1:3 and 3:1 (inclusive),
+neither dimension above 3840, and a total pixel count between 655,360 and
+8,294,400. For example, `800x480` is too small for Azure GPT-image-2. Other
+image models retain their existing request sizes.
 
 ### Image/Video Analysis with Attachments
 Example service calls for analyzing images or camera streams:

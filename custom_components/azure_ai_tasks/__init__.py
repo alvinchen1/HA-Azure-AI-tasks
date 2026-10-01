@@ -22,6 +22,7 @@ from .const import (
     ISSUE_MIGRATION_INCOMPLETE,
     ISSUE_MIGRATION_INCOMPLETE_RESTART,
 )
+from .services import async_register_services, async_unregister_services
 
 PLATFORMS: list[Platform] = [Platform.AI_TASK]
 
@@ -230,9 +231,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = entry.data
     
-    # Forward entry setup to AI task platform
-    await hass.config_entries.async_forward_entry_setups(entry, ["ai_task"])
-    
+    try:
+        await hass.config_entries.async_forward_entry_setups(entry, ["ai_task"])
+        # Register the custom action once, and keep it available while any
+        # entry is loaded.
+        async_register_services(hass, entry.entry_id)
+    except Exception:
+        async_unregister_services(hass, entry.entry_id)
+        hass.data[DOMAIN].pop(entry.entry_id)
+        raise
+
     return True
 
 
@@ -248,5 +256,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
         hass.data[DOMAIN].pop(entry.entry_id)
+        async_unregister_services(hass, entry.entry_id)
 
     return unload_ok
