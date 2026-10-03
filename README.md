@@ -151,7 +151,9 @@ data:
 dimensions divisible by 16, an aspect ratio between 1:3 and 3:1 (inclusive),
 neither dimension above 3840, and a total pixel count between 655,360 and
 8,294,400. For example, `800x480` is too small for Azure GPT-image-2. Other
-image models retain their existing request sizes.
+image models retain their existing request sizes. Downloads of generated image
+URLs retry transient network failures; generation requests themselves are not
+automatically repeated, to avoid accidental duplicate image charges.
 
 ### Image/Video Analysis with Attachments
 Example service calls for analyzing images or camera streams:

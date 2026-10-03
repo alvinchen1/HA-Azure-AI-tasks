@@ -1,11 +1,16 @@
 """Tests for GPT-image-2 request image dimensions."""
+import asyncio
 from unittest.mock import AsyncMock, MagicMock
 
+import aiohttp
 import pytest
 from homeassistant.exceptions import HomeAssistantError
 
 from custom_components.azure_ai_tasks import ai_task as ai_task_module
-from custom_components.azure_ai_tasks.ai_task import AzureAITaskEntity
+from custom_components.azure_ai_tasks.ai_task import (
+    AzureAITaskEntity,
+    IMAGE_DOWNLOAD_MAX_ATTEMPTS,
+)
 from custom_components.azure_ai_tasks.image_size import (
     parse_image_size,
 )
@@ -185,3 +190,116 @@ async def test_standard_image_generation_preserves_model_size_contract(
     assert payload["size"] == expected_size
     assert payload["quality"] == expected_quality
     assert payload["model"] == image_model
+    if image_model in {"dall-e-2", "dall-e-3"}:
+        assert payload["response_format"] == "url"
+
+
+@pytest.mark.asyncio
+async def test_image_download_retries_incomplete_response(monkeypatch) -> None:
+    """A reset while reading a large image retries the idempotent GET."""
+    config_entry = MagicMock()
+    entity = AzureAITaskEntity(
+        name="Azure AI Tasks",
+        endpoint="https://my-resource.openai.azure.com",
+        api_key="secret",
+        chat_model="",
+        image_model="gpt-image-2",
+        hass=MagicMock(),
+        config_entry=config_entry,
+    )
+    failed_response = MagicMock()
+    failed_response.status = 200
+    failed_response.read = AsyncMock(
+        side_effect=aiohttp.ClientPayloadError("response was truncated")
+    )
+    successful_response = MagicMock()
+    successful_response.status = 200
+    successful_response.read = AsyncMock(return_value=b"complete image")
+
+    def response_context(response):
+        context = MagicMock()
+        context.__aenter__ = AsyncMock(return_value=response)
+        context.__aexit__ = AsyncMock(return_value=None)
+        return context
+
+    session = MagicMock()
+    session.get.side_effect = [
+        response_context(failed_response),
+        response_context(failed_response),
+        response_context(successful_response),
+    ]
+    sleep = AsyncMock()
+    monkeypatch.setattr(asyncio, "sleep", sleep)
+
+    assert await entity._download_image_from_url(
+        session, "https://images.example/image.png"
+    ) == b"complete image"
+    assert session.get.call_count == IMAGE_DOWNLOAD_MAX_ATTEMPTS
+    assert sleep.await_args_list[0].args == (1,)
+    assert sleep.await_args_list[1].args == (2,)
+
+
+@pytest.mark.asyncio
+async def test_image_download_does_not_retry_permanent_http_error() -> None:
+    """Permanent image URL errors are reported without unnecessary retries."""
+    config_entry = MagicMock()
+    entity = AzureAITaskEntity(
+        name="Azure AI Tasks",
+        endpoint="https://my-resource.openai.azure.com",
+        api_key="secret",
+        chat_model="",
+        image_model="gpt-image-2",
+        hass=MagicMock(),
+        config_entry=config_entry,
+    )
+    response = MagicMock()
+    response.status = 404
+    context = MagicMock()
+    context.__aenter__ = AsyncMock(return_value=response)
+    context.__aexit__ = AsyncMock(return_value=None)
+    session = MagicMock()
+    session.get.return_value = context
+
+    with pytest.raises(HomeAssistantError, match="Failed to download image: 404"):
+        await entity._download_image_from_url(
+            session, "https://images.example/missing.png"
+        )
+    session.get.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_image_download_retries_temporary_http_error(monkeypatch) -> None:
+    """Temporary server errors retry before a successful image download."""
+    config_entry = MagicMock()
+    entity = AzureAITaskEntity(
+        name="Azure AI Tasks",
+        endpoint="https://my-resource.openai.azure.com",
+        api_key="secret",
+        chat_model="",
+        image_model="dall-e-3",
+        hass=MagicMock(),
+        config_entry=config_entry,
+    )
+    temporary_response = MagicMock(status=503)
+    successful_response = MagicMock(status=200)
+    successful_response.read = AsyncMock(return_value=b"complete image")
+
+    def response_context(response):
+        context = MagicMock()
+        context.__aenter__ = AsyncMock(return_value=response)
+        context.__aexit__ = AsyncMock(return_value=None)
+        return context
+
+    session = MagicMock()
+    session.get.side_effect = [
+        response_context(temporary_response),
+        response_context(successful_response),
+    ]
+    sleep = AsyncMock()
+    monkeypatch.setattr(asyncio, "sleep", sleep)
+
+    assert await entity._download_image_from_url(
+        session, "https://images.example/image.png"
+    ) == b"complete image"
+    assert session.get.call_count == 2
+    sleep.assert_awaited_once_with(IMAGE_DOWNLOAD_RETRY_DELAY)
