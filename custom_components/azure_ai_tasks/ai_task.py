@@ -1,6 +1,7 @@
 """Azure AI Task entity for Home Assistant."""
 from __future__ import annotations
 
+import asyncio
 import base64
 import json
 import logging
@@ -52,6 +53,8 @@ FLUX_MODEL = "flux.1-kontext-pro"
 DEFAULT_WIDTH = 1024
 DEFAULT_HEIGHT = 1024
 DEFAULT_MIME_TYPE = "image/png"
+IMAGE_DOWNLOAD_MAX_ATTEMPTS = 3
+IMAGE_DOWNLOAD_RETRY_DELAY = 1
 MAX_TOKENS = 1000
 # Reasoning models (GPT-5) spend part of the completion budget on hidden
 # reasoning tokens, so a small limit can yield empty output. Give them headroom.
@@ -324,13 +327,44 @@ class AzureAITaskEntity(ai_task.AITaskEntity):
             pass
         return DEFAULT_WIDTH, DEFAULT_HEIGHT
 
-    async def _download_image_from_url(self, session: aiohttp.ClientSession, url: str) -> bytes:
-        """Download image data from a URL."""
-        async with session.get(url) as response:
-            if response.status == 200:
-                return await response.read()
-            else:
-                raise HomeAssistantError(f"Failed to download image: {response.status}")
+    async def _download_image_from_url(
+        self, session: aiohttp.ClientSession, url: str
+    ) -> bytes:
+        """Download image data, retrying transient failures of the safe GET."""
+        for attempt in range(1, IMAGE_DOWNLOAD_MAX_ATTEMPTS + 1):
+            try:
+                async with session.get(url) as response:
+                    if response.status == 200:
+                        return await response.read()
+                    if response.status not in (408, 429) and response.status < 500:
+                        raise HomeAssistantError(
+                            f"Failed to download image: {response.status}"
+                        )
+                    if attempt == IMAGE_DOWNLOAD_MAX_ATTEMPTS:
+                        raise HomeAssistantError(
+                            "Image download failed after "
+                            f"{IMAGE_DOWNLOAD_MAX_ATTEMPTS} attempts: "
+                            f"HTTP {response.status}"
+                        )
+                    _LOGGER.warning(
+                        "Temporary HTTP %s downloading image (attempt %s/%s)",
+                        response.status,
+                        attempt,
+                        IMAGE_DOWNLOAD_MAX_ATTEMPTS,
+                    )
+            except (aiohttp.ClientError, asyncio.TimeoutError) as err:
+                if attempt == IMAGE_DOWNLOAD_MAX_ATTEMPTS:
+                    raise
+                _LOGGER.warning(
+                    "Temporary error downloading image (attempt %s/%s): %s",
+                    attempt,
+                    IMAGE_DOWNLOAD_MAX_ATTEMPTS,
+                    err,
+                )
+
+            await asyncio.sleep(IMAGE_DOWNLOAD_RETRY_DELAY * attempt)
+
+        raise HomeAssistantError("Image download failed unexpectedly")
 
     def _extract_base64_from_vision_response(self, content: str) -> bytes:
         """Extract base64 image data from vision model response."""
@@ -847,12 +881,12 @@ class AzureAITaskEntity(ai_task.AITaskEntity):
                 "size": DEFAULT_IMAGE_SIZE,
                 "quality": "standard",
                 "style": "vivid",
-                "response_format": "b64_json",
+                "response_format": "url",
             })
         elif image_model == "dall-e-2":
             payload.update({
                 "size": DEFAULT_IMAGE_SIZE,
-                "response_format": "b64_json",
+                "response_format": "url",
             })
         else:
             payload.update({

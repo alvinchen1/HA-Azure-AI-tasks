@@ -3,6 +3,17 @@
 All notable changes to Azure AI Tasks are recorded here. Versions follow
 [semantic versioning](https://semver.org/).
 
+## 3.0.2
+
+### Fixed
+
+- Image downloads now retry up to two times with backoff after transient
+  connection resets, incomplete responses, timeouts, and temporary HTTP errors.
+  DALL-E responses now use a URL rather than embedding the full image in the
+  Azure API response, so large image transfers use the retryable GET path. The
+  image-generation POST is not retried, preventing accidental duplicate
+  generations if the connection drops after Azure has accepted the request.
+
 ## 3.0.1
 
 ### Fixed
