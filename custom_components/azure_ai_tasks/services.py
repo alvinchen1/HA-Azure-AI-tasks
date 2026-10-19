@@ -132,12 +132,23 @@ async def async_service_generate_image_with_size(
 def async_register_services(hass: HomeAssistant, entry_id: str) -> None:
     """Register the custom AI Task service once for all config entries."""
     entry_ids = hass.data.get(DATA_SERVICE_ENTRY_IDS)
-    if not entry_ids:
-        if hass.services.has_service(DOMAIN, SERVICE_GENERATE_IMAGE_WITH_SIZE):
+    has_service = hass.services.has_service(
+        DOMAIN, SERVICE_GENERATE_IMAGE_WITH_SIZE
+    )
+    if has_service:
+        supports_response = hass.services.supports_response(
+            DOMAIN, SERVICE_GENERATE_IMAGE_WITH_SIZE
+        )
+        if not entry_ids and supports_response is not SupportsResponse.ONLY:
             raise HomeAssistantError(
                 f"Service {DOMAIN}.{SERVICE_GENERATE_IMAGE_WITH_SIZE} "
                 "is already registered"
             )
+    else:
+        supports_response = None
+
+    # Replace a legacy response-only registration during an integration reload.
+    if supports_response is not SupportsResponse.OPTIONAL:
         hass.services.async_register(
             DOMAIN,
             SERVICE_GENERATE_IMAGE_WITH_SIZE,
@@ -145,6 +156,8 @@ def async_register_services(hass: HomeAssistant, entry_id: str) -> None:
             schema=SERVICE_SCHEMA,
             supports_response=SupportsResponse.OPTIONAL,
         )
+
+    if not entry_ids:
         entry_ids = hass.data[DATA_SERVICE_ENTRY_IDS] = set()
     entry_ids.add(entry_id)
 

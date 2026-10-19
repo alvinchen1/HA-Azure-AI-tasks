@@ -29,6 +29,7 @@ def test_custom_service_registers_in_integration_domain() -> None:
     """The action belongs to the integration so its UI schema can be loaded."""
     hass = MagicMock()
     hass.data = {}
+    hass.services.has_service.return_value = False
 
     services.async_register_services(hass, "entry-1")
 
@@ -40,6 +41,28 @@ def test_custom_service_registers_in_integration_domain() -> None:
         hass.services.async_register.call_args.kwargs["supports_response"]
         == SupportsResponse.OPTIONAL
     )
+
+
+@pytest.mark.parametrize("existing_entries", [set(), {"entry-1"}])
+def test_custom_service_repairs_response_only_registration(
+    existing_entries: set[str],
+) -> None:
+    """Upgrade an existing service registration from response-only to optional."""
+    hass = MagicMock()
+    hass.data = {services.DATA_SERVICE_ENTRY_IDS: existing_entries}
+    hass.services.has_service.return_value = True
+    hass.services.supports_response.return_value = SupportsResponse.ONLY
+
+    services.async_register_services(hass, "entry-2")
+
+    assert (
+        hass.services.async_register.call_args.kwargs["supports_response"]
+        == SupportsResponse.OPTIONAL
+    )
+    assert hass.data[services.DATA_SERVICE_ENTRY_IDS] == {
+        *existing_entries,
+        "entry-2",
+    }
 
 
 def test_custom_service_description_has_form_fields() -> None:
