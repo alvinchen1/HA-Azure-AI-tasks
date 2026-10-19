@@ -5,6 +5,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from homeassistant.core import SupportsResponse
 
 from homeassistant.components import ai_task
 
@@ -34,6 +35,10 @@ def test_custom_service_registers_in_integration_domain() -> None:
     assert hass.services.async_register.call_args.args[:2] == (
         DOMAIN,
         services.SERVICE_GENERATE_IMAGE_WITH_SIZE,
+    )
+    assert (
+        hass.services.async_register.call_args.kwargs["supports_response"]
+        == SupportsResponse.OPTIONAL
     )
 
 

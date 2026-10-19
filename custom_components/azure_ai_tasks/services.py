@@ -143,7 +143,7 @@ def async_register_services(hass: HomeAssistant, entry_id: str) -> None:
             SERVICE_GENERATE_IMAGE_WITH_SIZE,
             async_service_generate_image_with_size,
             schema=SERVICE_SCHEMA,
-            supports_response=SupportsResponse.ONLY,
+            supports_response=SupportsResponse.OPTIONAL,
         )
         entry_ids = hass.data[DATA_SERVICE_ENTRY_IDS] = set()
     entry_ids.add(entry_id)
